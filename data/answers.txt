@@ -1,4 +1,0 @@
-1 2 praphul1    your name's praphul
-2 3 anurag    In India.
-3 2 praphul1  no
-4 4 praphul1 it is a system to analyse the sentiment of the system based on the no. of good and bad words

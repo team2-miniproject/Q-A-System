@@ -24,20 +24,28 @@ std::map<std::string, int> votes;
 std::map<std::string, std::set<std::string>> userVotes;
 std::map<std::string, std::set<std::string>> keywordIndex; // Changed from 'index' to 'keywordIndex'
 
-// Helper function to split text into keywords
-std::set<std::string> extractKeywords(const std::string& text) {
-    std::set<std::string> keywords;
-    std::istringstream iss(text);
-    std::string word;
-    while (iss >> word) {
-        // Remove punctuation and convert to lowercase
-        word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end());
-        std::transform(word.begin(), word.end(), word.begin(), ::tolower);
-        if (word.length() > 2) { // Ignore very short words
-            keywords.insert(word);
+void saveIndex() {
+    std::ofstream file("data/index.txt");
+    for (const auto& [word, ids] : keywordIndex) {
+        file << word;
+        for (const auto& id : ids) {
+            file << " " << id;
+        }
+        file << "\n";
+    }
+}
+
+void loadIndex() {
+    std::ifstream file("data/index.txt");
+    std::string line, word, id;
+    keywordIndex.clear();
+    while (getline(file, line)) {
+        std::istringstream iss(line);
+        iss >> word;
+        while (iss >> id) {
+            keywordIndex[word].insert(id);
         }
     }
-    return keywords;
 }
 
 void loadQuestions() {
@@ -53,10 +61,7 @@ void loadQuestions() {
         questions.push_back({id, user, text});
         
         // Index the question text
-        auto keywords = extractKeywords(text);
-        for (const auto& keyword : keywords) {
-            keywordIndex[keyword].insert(id);
-        }
+        loadIndex();
     }
 }
 
@@ -110,11 +115,13 @@ void saveQuestion(const std::string &question, const std::string &username) {
         file.close();
         questions.push_back({std::to_string(nextID), username, question});
         
-        // Update the keyword index
-        auto keywords = extractKeywords(question);
-        for (const auto& keyword : keywords) {
-            keywordIndex[keyword].insert(std::to_string(nextID));
+        std::istringstream words(question);
+        std::string word;
+        while (words >> word) {
+            keywordIndex[word].insert(std::to_string(nextID));
         }
+        
+        saveIndex(); 
         
         std::cout << "Question posted successfully with ID: " << nextID << "\n";
     }
@@ -281,15 +288,38 @@ void deleteQuestion(const std::string& username) {
     });
     
     if (it != questions.end()) {
-        questions.erase(it, questions.end());
+        // Before deleting, remove this question ID from the keyword index
+        for (auto& [keyword, questionIds] : keywordIndex) {
+            questionIds.erase(qID);
+        }
+        
+        // Remove any keywords that now have empty sets
+        std::vector<std::string> emptyKeywords;
+        for (const auto& [keyword, questionIds] : keywordIndex) {
+            if (questionIds.empty()) {
+                emptyKeywords.push_back(keyword);
+            }
+        }
+        
+        for (const auto& keyword : emptyKeywords) {
+            keywordIndex.erase(keyword);
+        }
+        
+        // Save the updated index
+        saveIndex();
+        
+        // Remove the question
+        questions.erase(it);
+        
+        // Remove associated answers
         answers.erase(std::remove_if(answers.begin(), answers.end(), [&](const Answer& a) {
             return a.questionID == qID;
         }), answers.end());
+        
+        // Save questions and answers
         saveQuestions();
         saveAnswers();
         
-        // Update keyword index
-        loadQuestions(); // Reloads questions and rebuilds the index
         std::cout << "Question deleted successfully.\n";
     } else {
         std::cout << "You can only delete your own questions.\n";
