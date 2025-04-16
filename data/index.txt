@@ -1,5 +1,8 @@
-? 3
-from 3
+? 2 3
+does 2
 is 3
-modi 3
+mean 2
+punjab 3
+semaphore 2
+what 2
 where 3

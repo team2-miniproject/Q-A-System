@@ -12,7 +12,8 @@ bool authenticateUser(std::string command) {
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
+    //change to ur server ip by doing ipconfig (i've written mine here)
+    inet_pton(AF_INET, "172.30.7.248", &serv_addr.sin_addr);
     connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
     send(sock, command.c_str(), command.size(), 0);

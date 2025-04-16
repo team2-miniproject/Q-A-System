@@ -315,6 +315,7 @@ void deleteQuestion(const std::string& username) {
         answers.erase(std::remove_if(answers.begin(), answers.end(), [&](const Answer& a) {
             return a.questionID == qID;
         }), answers.end());
+
         
         // Save questions and answers
         saveQuestions();
@@ -350,10 +351,31 @@ void deleteAnswer(const std::string& username) {
     if (it != answers.end()) {
         answers.erase(it, answers.end());
         saveAnswers();
+    
+        // Remove vote records from memory
+        votes.erase(aID);
+        userVotes.erase(aID);
+    
+        // Clean up votes.txt
+        std::ifstream voteRead("data/votes.txt");
+        std::ofstream voteWrite("data/votes_temp.txt");
+        std::string voteLine;
+        std::string answerIDFromFile, voter;
+        int voteVal;
+    
+        while (voteRead >> answerIDFromFile >> voter >> voteVal) {
+            if (answerIDFromFile != aID) {
+                voteWrite << answerIDFromFile << " " << voter << " " << voteVal << "\n";
+            }
+        }
+        voteRead.close();
+        voteWrite.close();
+        std::remove("data/votes.txt");
+        std::rename("data/votes_temp.txt", "data/votes.txt");
+    
         std::cout << "Answer deleted successfully.\n";
-    } else {
-        std::cout << "You can only delete your own answers.\n";
     }
+    
 }
 
 void deleteContent(const std::string& username) {
