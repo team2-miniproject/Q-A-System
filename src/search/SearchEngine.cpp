@@ -32,7 +32,8 @@ std::vector<Question> SearchEngine::searchQuestions(const std::string& keyword, 
 
     // Find the corresponding questions
     for (const auto& question : allQuestions) {
-        if (std::find(questionIDs.begin(), questionIDs.end(), question.getID()) != questionIDs.end()) {
+        if (std::find(questionIDs.begin(), questionIDs.end(), std::string(question.getID())) != questionIDs.end()) {
+
             results.push_back(question);
         }
     }
